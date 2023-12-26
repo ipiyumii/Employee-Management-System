@@ -2,6 +2,7 @@ package controller;
 
 import java.io.IOException;
 import java.sql.Date;
+import java.util.List;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -10,6 +11,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import employeeServices.EmployeeServices;
+import models.Employee;
 
 //import services.EmployeeServices;
 
@@ -33,9 +35,19 @@ public class EmployeeController extends HttpServlet {
             request.getRequestDispatcher("/pages/add.jsp").forward(request, response);
             break;
         case "/edit":
-        	request.getRequestDispatcher("/pages/edit.jsp").forward(request, response);
+        	try { 		
+           	 int editId = Integer.parseInt(request.getParameter("id"));
+             Employee editEmployee = selectById(editId);
+             request.setAttribute("employee", editEmployee);
+             request.getRequestDispatcher("/pages/edit.jsp").forward(request, response);
+
+			} catch (Exception e) {
+				System.out.println(e); 
+                response.sendRedirect(request.getContextPath() + "/list");
+			}
         	break;
         case "/delete":
+        	deleteEmployee(request, response);
         	request.getRequestDispatcher("/pages/list.jsp").forward(request, response); //*********************
         	break;
         default:
@@ -64,6 +76,9 @@ public class EmployeeController extends HttpServlet {
         case "/delete":
         	deleteEmployee(request,response);
         	break;
+        case "/list":
+        	viewEmployee(request, response);
+        	break;
         default:
             response.sendRedirect(request.getContextPath() + "/index.jsp");
             break;
@@ -78,8 +93,8 @@ public class EmployeeController extends HttpServlet {
 	        String dateString = request.getParameter("dateJoined");
 	        Date dateJoined = Date.valueOf(dateString);
 			
-			EmployeeServices e_serv = new EmployeeServices();
-			boolean result = e_serv.insert(name,nic,department,designation,dateJoined);
+			EmployeeServices e_service = new EmployeeServices();
+			boolean result = e_service.insert(name,nic,department,designation,dateJoined);
 
 		    response.sendRedirect(request.getContextPath() + "/list");
 			
@@ -105,8 +120,32 @@ public class EmployeeController extends HttpServlet {
 	        int id = Integer.parseInt(request.getParameter("id"));
 			EmployeeServices e_serv = new EmployeeServices();
 			boolean result = e_serv.delete(id);
-			
-	        response.sendRedirect(request.getContextPath() + "/list");
+	}
+	 
+	 
+	 public void viewEmployee(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+	        EmployeeServices e_serv = new EmployeeServices();
+	        List<Employee> employees = e_serv.selectAll();
+
+	        if (employees != null && !employees.isEmpty()) {
+	            request.setAttribute("employees", employees);
+	            request.getRequestDispatcher("/pages/list.jsp").forward(request, response);
+	        	//response.sendRedirect(request.getContextPath() + "/list");
+	        } else {
+	            response.sendRedirect(request.getContextPath() + "/index.jsp");
+
+	        }
+	    }
+	 
+	 public Employee selectById(int id) {
+		 try {
+	            EmployeeServices e_serv = new EmployeeServices();
+	            return e_serv.selectById(id);
+	        } catch (Exception e) {
+	        	e.printStackTrace(); 
+	            throw new RuntimeException("Error in selectById method", e);
+	        }
+	     
 	 }
 
 }
